@@ -6,6 +6,8 @@ Streamlit dashboard.
 
 *Gurusinghe W.A.L.M (224063X), BSc (Hons) IT, University of Moratuwa*
 
+**Live dashboard:** https://sl-weather-ensembles.streamlit.app
+
 ## Data
 
 Kaggle [*Sri Lanka Weather Dataset*](https://www.kaggle.com/datasets/rasulmah/sri-lanka-weather-dataset)
