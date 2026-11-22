@@ -1,5 +1,5 @@
 # AI-assisted: generated with Claude Code, reviewed and run by the author
-# Light and dark themes; the viewer picks one in the app menu (Settings), default follows the system.
+# Light and dark themes. The app starts in Light; visitors can switch to Dark in the ⋮ menu.
 [theme]
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 headingFont = "Space Grotesk:https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"

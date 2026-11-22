@@ -47,43 +47,50 @@ def ink() -> str:
 
 # ------------------------------------------------------------------ style
 # AI-assisted: colours live in CSS variables; a small script (below) copies the active Streamlit
-# theme onto <html data-sl-theme>, so switching Light/Dark in Settings restyles everything at once.
+# theme onto <html data-sl-theme>, so switching Light/Dark in the ⋮ menu restyles everything at once.
 CSS = """
 <style>
 :root{
   --ink:#e6ecf5;--ink2:#b4c0d3;--muted:#8b98ad;--line:rgba(148,163,184,.18);
-  --card:rgba(14,21,38,.68);--card-solid:#0e1526;--shadow:0 10px 30px rgba(0,0,0,.25);
+  --card:rgba(16,24,44,.55);--card-solid:#0e1526;--glass-edge:rgba(148,163,184,.22);--glass-hi:rgba(255,255,255,.06);
+  --shadow:0 10px 30px rgba(0,0,0,.30);--blur:blur(18px) saturate(140%);
   --accent:#38bdf8;--accent2:#a78bfa;--accent-ink:#06101f;--chip:rgba(255,255,255,.04);
   --hero:linear-gradient(135deg,rgba(14,25,48,.9),rgba(10,14,28,.75));
   --hero-grid:rgba(56,189,248,.07);
   --title-grad:linear-gradient(90deg,#e6ecf5 0%,#7dd3fc 55%,#c4b5fd 100%);
-  --page:radial-gradient(900px 500px at 8% -10%,rgba(56,189,248,.16),transparent 60%),
-         radial-gradient(800px 500px at 100% 0%,rgba(167,139,250,.12),transparent 60%),
-         radial-gradient(700px 600px at 50% 120%,rgba(25,158,112,.10),transparent 60%),#070b16;
+  --page:radial-gradient(rgba(148,163,184,.07) 1px,transparent 1.3px) 0 0/24px 24px,
+         radial-gradient(900px 500px at 8% -10%,rgba(56,189,248,.18),transparent 60%),
+         radial-gradient(800px 500px at 100% 0%,rgba(167,139,250,.14),transparent 60%),
+         radial-gradient(700px 600px at 50% 120%,rgba(25,158,112,.12),transparent 60%),#070b16;
 }
 html[data-sl-theme="light"]{
   --ink:#0f172a;--ink2:#334155;--muted:#5b6678;--line:#d9e3ee;
-  --card:rgba(255,255,255,.86);--card-solid:#ffffff;--shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px rgba(15,23,42,.07);
+  --card:rgba(255,255,255,.55);--card-solid:#ffffff;--glass-edge:rgba(255,255,255,.85);--glass-hi:rgba(255,255,255,.95);
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px rgba(30,64,120,.10);--blur:blur(20px) saturate(170%);
   --accent:#0a72c2;--accent2:#7c3aed;--accent-ink:#ffffff;--chip:#f1f6fb;
-  --hero:linear-gradient(135deg,#ffffff 0%,#f3f9ff 55%,#f6f3ff 100%);
+  --hero:linear-gradient(135deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.5) 60%,rgba(245,240,255,.55) 100%);
   --hero-grid:rgba(10,114,194,.07);
   --title-grad:linear-gradient(90deg,#0f172a 0%,#0a72c2 50%,#7c3aed 100%);
-  --page:radial-gradient(900px 520px at 0% -10%,rgba(56,189,248,.20),transparent 60%),
-         radial-gradient(760px 520px at 100% 0%,rgba(167,139,250,.16),transparent 60%),
-         radial-gradient(800px 620px at 50% 115%,rgba(52,211,153,.16),transparent 60%),#f6f9fc;
+  --page:radial-gradient(rgba(15,23,42,.07) 1px,transparent 1.3px) 0 0/24px 24px,
+         radial-gradient(620px 460px at 4% 2%,rgba(56,189,248,.38),transparent 65%),
+         radial-gradient(560px 440px at 96% 8%,rgba(167,139,250,.34),transparent 65%),
+         radial-gradient(640px 520px at 78% 72%,rgba(52,211,153,.26),transparent 65%),
+         radial-gradient(560px 460px at 12% 88%,rgba(251,146,60,.20),transparent 65%),#f4f8fc;
 }
-.stApp{background:var(--page)}
+.stApp{background:var(--page);background-attachment:fixed}
 .block-container{padding-top:4.4rem;padding-bottom:2rem;max-width:1280px}
 .stMarkdown p,.stMarkdown li{line-height:1.65}
 h1,h2,h3,h4{letter-spacing:-.015em}
 :focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px}
 
 /* cards */
+/* glass: translucent fill + background blur + bright 1px edge + top highlight (glassmorphism) */
 [data-testid="stMetric"],
-[data-testid="stVerticalBlockBorderWrapper"]{background:var(--card);box-shadow:var(--shadow);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-[data-testid="stVerticalBlockBorderWrapper"]{border-color:var(--line) !important;border-radius:16px !important}
-[data-testid="stMetric"]{border:1px solid var(--line);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;height:100%}
+[data-testid="stVerticalBlockBorderWrapper"]{background:var(--card);
+  box-shadow:var(--shadow),inset 0 1px 0 var(--glass-hi);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+[data-testid="stVerticalBlockBorderWrapper"]{border:1px solid var(--glass-edge) !important;border-radius:18px !important}
+[data-testid="stMetric"]{border:1px solid var(--glass-edge);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;height:100%}
 [data-testid="stMetric"]::after{content:"";position:absolute;left:0;top:0;height:3px;width:100%;
   background:linear-gradient(90deg,var(--accent),var(--accent2),transparent)}
 [data-testid="stMetricLabel"] p{color:var(--muted);font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;font-weight:600}
@@ -96,8 +103,9 @@ h1,h2,h3,h4{letter-spacing:-.015em}
 [data-testid="stCaptionContainer"]{color:var(--muted)}
 
 /* hero */
-.hero{position:relative;padding:clamp(18px,3.2vw,30px);border-radius:22px;border:1px solid var(--line);
-  margin-bottom:18px;overflow:hidden;background:var(--hero);box-shadow:var(--shadow)}
+.hero{position:relative;padding:clamp(18px,3.2vw,30px);border-radius:22px;border:1px solid var(--glass-edge);
+  margin-bottom:18px;overflow:hidden;background:var(--hero);box-shadow:var(--shadow),inset 0 1px 0 var(--glass-hi);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
 .hero::before{content:"";position:absolute;inset:-1px;pointer-events:none;
   background-image:linear-gradient(var(--hero-grid) 1px,transparent 1px),linear-gradient(90deg,var(--hero-grid) 1px,transparent 1px);
   background-size:36px 36px;mask-image:linear-gradient(90deg,transparent,#000 65%)}
@@ -118,7 +126,7 @@ h1,h2,h3,h4{letter-spacing:-.015em}
 .chart-title{font:600 1.02rem/1.35 'Space Grotesk',sans-serif;color:var(--ink);margin:2px 0 0}
 .chart-sub{font-size:.84rem;color:var(--muted);margin:2px 0 4px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0}
-.chip{font-size:.82rem;color:var(--ink2);padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--chip)}
+.chip{font-size:.82rem;color:var(--ink2);padding:5px 10px;border:1px solid var(--glass-edge);border-radius:999px;background:var(--chip)}
 .chip b{color:var(--ink);font-weight:600}
 
 /* split timeline */
@@ -128,6 +136,9 @@ h1,h2,h3,h4{letter-spacing:-.015em}
 .foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:.8rem;
   display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px}
 
+/* only Light and Dark are offered (Light is the default) */
+[data-testid="stMainMenuItem-theme-System"]{display:none !important}
+html.sl-auto [data-testid="stMainMenuPopover"]{opacity:0 !important;pointer-events:none !important}
 /* the theme-sync script sits in an empty element; keep it out of the layout */
 .stElementContainer:has(.sl-theme-sync){display:none}
 
@@ -166,6 +177,24 @@ THEME_SYNC = """
   }
   sync();
   if (!window.__slThemeSync) { window.__slThemeSync = setInterval(sync, 300); }
+
+  // Light by default: Streamlit starts on "System", so on load we pick Light in its (hidden) menu
+  // once. A visitor who later picks Dark keeps Dark, because the menu then no longer says System.
+  if (window.__slDefault) return; window.__slDefault = true;
+  const q = s => document.querySelector(s);
+  const until = (f, ms = 6000) => new Promise(res => { const t0 = Date.now(); (function w(){ const v = f(); if (v || Date.now() - t0 > ms) res(v); else setTimeout(w, 60); })(); });
+  (async () => {
+    const btn = await until(() => q('[data-testid="stMainMenuButton"], [data-testid="stMainMenu"] button'));
+    if (!btn) return;
+    root.classList.add('sl-auto');
+    btn.click();
+    const sys = await until(() => q('[data-testid="stMainMenuItem-theme-System"]'), 2000);
+    if (sys && sys.getAttribute('aria-checked') === 'true') q('[data-testid="stMainMenuItem-theme-Light"]').click();
+    await new Promise(r => setTimeout(r, 80));
+    if (q('[data-testid="stMainMenuPopover"]')) btn.click();
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+    setTimeout(() => root.classList.remove('sl-auto'), 150);
+  })();
 })();
 </script>
 """

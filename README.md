@@ -55,8 +55,8 @@ The Overview page draws the island in 3D with [deck.gl](https://deck.gl) 9.4.1 f
 WebGL turned off get an SVG version of the same scene. The rotation pauses with the Pause button and is off
 when the system asks for reduced motion.
 
-The dashboard has a light and a dark theme. It follows the device setting by default; switch it in the
-menu (⋮ → Settings). It is laid out for phones as well as desktops.
+The dashboard opens in a light theme; a dark theme is one click away in the ⋮ menu. It is laid out
+for phones as well as desktops.
 
 ## AI use
 
