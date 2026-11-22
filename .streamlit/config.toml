@@ -32,4 +32,4 @@ dataframeHeaderBackgroundColor = "#0e1526"
 gatherUsageStats = false
 
 [client]
-toolbarMode = "minimal"
+toolbarMode = "viewer"
