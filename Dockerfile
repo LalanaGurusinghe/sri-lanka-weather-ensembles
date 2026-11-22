@@ -12,6 +12,7 @@ COPY app/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
+COPY .streamlit/ ./.streamlit/
 COPY artifacts/ ./artifacts/
 
 # Choreo requires a numeric, non-root user ID between 10000 and 20000

@@ -35,6 +35,9 @@ src/features.py                cleaning, lag/rolling features, targets, time spl
 src/models.py                  model builders, metrics, OOF helper
 artifacts/                     metrics.json, predictions, figures, best models
 app/app.py                     Streamlit dashboard
+app/island3d.py                animated 3D map of Sri Lanka (deck.gl, with an SVG fallback)
+app/assets/                    province outlines (geoBoundaries, CC BY 4.0)
+.streamlit/config.toml         dark theme
 ```
 
 ## Run it
@@ -47,6 +50,10 @@ streamlit run app/app.py
 ```
 
 The dashboard only reads `artifacts/`, so it runs without the raw data and without retraining.
+
+The Overview page draws the island in 3D with [deck.gl](https://deck.gl) 9.4.1 from a CDN. Browsers with
+WebGL turned off get an SVG version of the same scene. The rotation pauses with the Pause button and is off
+when the system asks for reduced motion.
 
 ## AI use
 
