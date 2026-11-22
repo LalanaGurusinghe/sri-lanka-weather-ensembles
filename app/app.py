@@ -506,7 +506,7 @@ def page_explain():
     kicker("Leakage check: random vs time split")
     demo = pd.DataFrame(load_metrics()["leakage_demo"]).set_index(["task", "split"])
     table(demo.style.format("{:.4f}"))
-    st.caption("Nearby cities share Open-Meteo grid cells (Colombo = Mabole exactly), so a random split "
+    st.caption("Nearby cities share Open-Meteo grid cells (Colombo has Mabole's exact temperatures and Mount Lavinia's exact rainfall), so a random split "
                "lets the model peek at a twin of each test day. Final scores always use the time split.")
     st.warning("Limits: modelled reanalysis data, not Department of Meteorology station readings; "
                "nearby cities share grid cells; the test period covers only 18 months.", icon=":material/info:")
