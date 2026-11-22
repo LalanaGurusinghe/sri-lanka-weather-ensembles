@@ -238,7 +238,7 @@ def metrics_table(task: str) -> pd.DataFrame:
 
 # ------------------------------------------------------------------ small UI pieces
 def hero(eyebrow, title, accent, text, who=False):
-    w = ('<div class="who">Gurusinghe W.A.L.M (224063X) · BSc (Hons) IT, University of Moratuwa</div>'
+    w = ('<div class="who">Gurusinghe W.A.L.M (224066J) · BSc (Hons) IT, University of Moratuwa</div>'
          if who else "")
     st.markdown(f'<div class="hero"><div class="eyebrow"><i></i>{eyebrow}</div>'
                 f'<h1>{title} <span>{accent}</span></h1><p>{text}</p>{w}</div>', unsafe_allow_html=True)

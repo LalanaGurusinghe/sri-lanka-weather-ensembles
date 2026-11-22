@@ -4,7 +4,7 @@ Next-day rain and temperature forecasts for 30 Sri Lankan cities, comparing **ba
 **boosting**, **stacking** and two **hybrid** models (RF + SARIMA, RF + ANN), with a
 Streamlit dashboard.
 
-*Gurusinghe W.A.L.M (224063X), BSc (Hons) IT, University of Moratuwa*
+*Gurusinghe W.A.L.M (224066J), BSc (Hons) IT, University of Moratuwa*
 
 **Live dashboard:** https://sl-weather-ensembles.streamlit.app
 
