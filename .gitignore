@@ -1,0 +1,15 @@
+# secrets — keep first
+.env
+CLAUDE_CODE_PROMPT.md
+# data & env
+data/raw/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# large model files (re-created by the notebook)
+artifacts/models/*_large.joblib
+catboost_info/
+# local tooling / planning notes (not part of the submission)
+.claude/
+docs/

@@ -1,0 +1,376 @@
+{
+  "tasks": {
+    "rain_amount": {
+      "Persistence": {
+        "family": "Baseline",
+        "MAE": 0.6043306262857251,
+        "RMSE": 0.8436391645227633,
+        "R2": 0.30378619567843124,
+        "train_time_s": 0.0
+      },
+      "Climatology": {
+        "family": "Baseline",
+        "MAE": 0.7013733072649847,
+        "RMSE": 0.8908318318489048,
+        "R2": 0.2237160293621102,
+        "train_time_s": 0.01
+      },
+      "Linear": {
+        "family": "Baseline",
+        "MAE": 0.5812987186029379,
+        "RMSE": 0.7520507030318039,
+        "R2": 0.44674747152842387,
+        "train_time_s": 0.22
+      },
+      "RandomForest": {
+        "family": "Bagging",
+        "MAE": 0.568035080518416,
+        "RMSE": 0.7367327757809371,
+        "R2": 0.46905547521522906,
+        "train_time_s": 8.2
+      },
+      "BaggedTrees": {
+        "family": "Bagging",
+        "MAE": 0.5747765344906433,
+        "RMSE": 0.7494146688193457,
+        "R2": 0.45061911651386355,
+        "train_time_s": 18.68
+      },
+      "ExtraTrees": {
+        "family": "Bagging",
+        "MAE": 0.5677548003095206,
+        "RMSE": 0.7395250849393383,
+        "R2": 0.46502315615985146,
+        "train_time_s": 13.13
+      },
+      "HistGB": {
+        "family": "Boosting",
+        "MAE": 0.5614881417462857,
+        "RMSE": 0.7397868966842699,
+        "R2": 0.46464429676235985,
+        "train_time_s": 2.64
+      },
+      "XGBoost": {
+        "family": "Boosting",
+        "MAE": 0.5596611286856911,
+        "RMSE": 0.7350012238113073,
+        "R2": 0.47154831299488154,
+        "train_time_s": 1.57
+      },
+      "LightGBM": {
+        "family": "Boosting",
+        "MAE": 0.5657681958586713,
+        "RMSE": 0.7370498532412764,
+        "R2": 0.4685983575881505,
+        "train_time_s": 2.25
+      },
+      "CatBoost": {
+        "family": "Boosting",
+        "MAE": 0.5585127580464739,
+        "RMSE": 0.7318500706156709,
+        "R2": 0.4760698362610827,
+        "train_time_s": 3.78
+      },
+      "Stacking": {
+        "family": "Stacking",
+        "MAE": 0.5578864671572015,
+        "RMSE": 0.7322164713542523,
+        "R2": 0.4755450936637716,
+        "train_time_s": 37.1
+      }
+    },
+    "rain_flag": {
+      "Persistence": {
+        "family": "Baseline",
+        "Accuracy": 0.8042606516290727,
+        "F1": 0.8573646242352296,
+        "ROC_AUC": 0.772674481500154,
+        "PR_AUC": 0.8327558583159833,
+        "train_time_s": 0.0
+      },
+      "Climatology": {
+        "family": "Baseline",
+        "Accuracy": 0.7493107769423559,
+        "F1": 0.8096121817749227,
+        "ROC_AUC": 0.8063284853654846,
+        "PR_AUC": 0.8963203826721762,
+        "train_time_s": 0.01
+      },
+      "Linear": {
+        "family": "Baseline",
+        "Accuracy": 0.818609022556391,
+        "F1": 0.8713619195734281,
+        "ROC_AUC": 0.8824850501288687,
+        "PR_AUC": 0.9428973530082595,
+        "train_time_s": 4.27
+      },
+      "RandomForest": {
+        "family": "Bagging",
+        "Accuracy": 0.8130952380952381,
+        "F1": 0.8680146896155038,
+        "ROC_AUC": 0.8820876298053834,
+        "PR_AUC": 0.9435419747018974,
+        "train_time_s": 5.08
+      },
+      "BaggedTrees": {
+        "family": "Bagging",
+        "Accuracy": 0.8123433583959899,
+        "F1": 0.8665389242903614,
+        "ROC_AUC": 0.8693923312584688,
+        "PR_AUC": 0.9307427824626535,
+        "train_time_s": 14.51
+      },
+      "ExtraTrees": {
+        "family": "Bagging",
+        "Accuracy": 0.8144736842105263,
+        "F1": 0.8688488284537361,
+        "ROC_AUC": 0.8802428337135195,
+        "PR_AUC": 0.9421141548410192,
+        "train_time_s": 11.72
+      },
+      "HistGB": {
+        "family": "Boosting",
+        "Accuracy": 0.8138471177944863,
+        "F1": 0.8651935205771587,
+        "ROC_AUC": 0.8784646479432191,
+        "PR_AUC": 0.9415346118821597,
+        "train_time_s": 3.17
+      },
+      "XGBoost": {
+        "family": "Boosting",
+        "Accuracy": 0.8147243107769424,
+        "F1": 0.8667597891226964,
+        "ROC_AUC": 0.8800923271907742,
+        "PR_AUC": 0.9419090309605834,
+        "train_time_s": 2.72
+      },
+      "LightGBM": {
+        "family": "Boosting",
+        "Accuracy": 0.8127192982456141,
+        "F1": 0.8651355863375897,
+        "ROC_AUC": 0.8796939774209416,
+        "PR_AUC": 0.9424967880452431,
+        "train_time_s": 8.08
+      },
+      "CatBoost": {
+        "family": "Boosting",
+        "Accuracy": 0.8157268170426065,
+        "F1": 0.86756428153285,
+        "ROC_AUC": 0.878777889586731,
+        "PR_AUC": 0.9418399581041638,
+        "train_time_s": 9.83
+      },
+      "Stacking": {
+        "family": "Stacking",
+        "Accuracy": 0.8174185463659148,
+        "F1": 0.8702813390313391,
+        "ROC_AUC": 0.8849597101410396,
+        "PR_AUC": 0.9453131279770454,
+        "train_time_s": 98.11
+      }
+    },
+    "tmax": {
+      "Persistence": {
+        "family": "Baseline",
+        "MAE": 0.6915852130325815,
+        "RMSE": 0.9655932377310229,
+        "R2": 0.7840918599532922,
+        "train_time_s": 0.0
+      },
+      "Climatology": {
+        "family": "Baseline",
+        "MAE": 0.8821919990682151,
+        "RMSE": 1.1782071609392115,
+        "R2": 0.678542249816577,
+        "train_time_s": 0.01
+      },
+      "Linear": {
+        "family": "Baseline",
+        "MAE": 0.6053710438816466,
+        "RMSE": 0.8225703737382489,
+        "R2": 0.8433152560935632,
+        "train_time_s": 0.22
+      },
+      "RandomForest": {
+        "family": "Bagging",
+        "MAE": 0.6053034484393688,
+        "RMSE": 0.8108252558409683,
+        "R2": 0.8477577757155246,
+        "train_time_s": 24.37
+      },
+      "BaggedTrees": {
+        "family": "Bagging",
+        "MAE": 0.6156661760410826,
+        "RMSE": 0.825090821234912,
+        "R2": 0.8423535859045244,
+        "train_time_s": 13.11
+      },
+      "ExtraTrees": {
+        "family": "Bagging",
+        "MAE": 0.6001395343390599,
+        "RMSE": 0.8049663488161328,
+        "R2": 0.8499499876534384,
+        "train_time_s": 15.22
+      },
+      "HistGB": {
+        "family": "Boosting",
+        "MAE": 0.5942691527301457,
+        "RMSE": 0.8000095864908995,
+        "R2": 0.8517922318840784,
+        "train_time_s": 2.77
+      },
+      "XGBoost": {
+        "family": "Boosting",
+        "MAE": 0.5946186520521504,
+        "RMSE": 0.8006078021021844,
+        "R2": 0.8515705011688504,
+        "train_time_s": 5.57
+      },
+      "LightGBM": {
+        "family": "Boosting",
+        "MAE": 0.5950183420721207,
+        "RMSE": 0.8012167764702257,
+        "R2": 0.8513446124451872,
+        "train_time_s": 10.52
+      },
+      "CatBoost": {
+        "family": "Boosting",
+        "MAE": 0.595600840153827,
+        "RMSE": 0.8007032764780835,
+        "R2": 0.8515350979197086,
+        "train_time_s": 6.8
+      },
+      "Stacking": {
+        "family": "Stacking",
+        "MAE": 0.5891931659031675,
+        "RMSE": 0.7957197636878337,
+        "R2": 0.8533774140271427,
+        "train_time_s": 98.73
+      }
+    }
+  },
+  "hybrids": {
+    "RF + SARIMA (Colombo weekly temp)": {
+      "SARIMA": {
+        "MAE": 0.3833137880220706,
+        "RMSE": 0.4951140854732963,
+        "R2": 0.6399046501070216,
+        "train_time_s": 33.24
+      },
+      "RF": {
+        "MAE": 0.36959823880188614,
+        "RMSE": 0.4710050982476513,
+        "R2": 0.6741196562472505,
+        "train_time_s": 0.32
+      },
+      "RF+SARIMA": {
+        "MAE": 0.377289605414229,
+        "RMSE": 0.4792274437016752,
+        "R2": 0.662642545607182,
+        "train_time_s": 33.57
+      }
+    },
+    "RF + ANN (next-day Tmax)": {
+      "RF": {
+        "MAE": 0.6053034484393688,
+        "RMSE": 0.8108252558409683,
+        "R2": 0.8477577757155246,
+        "train_time_s": 24.37
+      },
+      "ANN": {
+        "MAE": 0.7257196316136832,
+        "RMSE": 0.9572405298381044,
+        "R2": 0.7878110606877754,
+        "train_time_s": 23.64
+      },
+      "Blend (w_RF=0.8)": {
+        "MAE": 0.595958239549543,
+        "RMSE": 0.7994259703667201,
+        "R2": 0.8520083915266374,
+        "train_time_s": 48.01
+      },
+      "RF + ANN residual (lambda=0.15)": {
+        "MAE": 0.596458506575033,
+        "RMSE": 0.8012011260179315,
+        "R2": 0.8513504198655936,
+        "train_time_s": 47.17
+      }
+    }
+  },
+  "best_params_rf": {
+    "rain_amount": {
+      "min_samples_leaf": 5,
+      "max_features": 0.2,
+      "max_depth": 25
+    },
+    "rain_flag": {
+      "min_samples_leaf": 20,
+      "max_features": "sqrt",
+      "max_depth": null
+    },
+    "tmax": {
+      "min_samples_leaf": 5,
+      "max_features": 0.6,
+      "max_depth": null
+    }
+  },
+  "best_iterations": {
+    "rain_amount": {
+      "XGBoost": 103,
+      "LightGBM": 74,
+      "CatBoost": 96
+    },
+    "rain_flag": {
+      "XGBoost": 186,
+      "LightGBM": 193,
+      "CatBoost": 285
+    },
+    "tmax": {
+      "XGBoost": 172,
+      "LightGBM": 141,
+      "CatBoost": 274
+    }
+  },
+  "rf_ann_blend_weight": 0.8,
+  "rf_ann_residual_lambda": 0.15,
+  "split": {
+    "train": "2010-01-30 to 2020-12-31",
+    "validation": "2021",
+    "test": "2022-01-01 to 2023-06-16"
+  },
+  "leakage_demo": [
+    {
+      "task": "tmax",
+      "split": "random split",
+      "MAE": 0.425,
+      "RMSE": 0.609,
+      "R2": 0.918
+    },
+    {
+      "task": "tmax",
+      "split": "time split",
+      "MAE": 0.607,
+      "RMSE": 0.81,
+      "R2": 0.848
+    },
+    {
+      "task": "rain_amount",
+      "split": "random split",
+      "MAE": 0.318,
+      "RMSE": 0.493,
+      "R2": 0.787
+    },
+    {
+      "task": "rain_amount",
+      "split": "time split",
+      "MAE": 0.57,
+      "RMSE": 0.74,
+      "R2": 0.465
+    }
+  ],
+  "main_metric": {
+    "tmax": "MAE",
+    "rain_amount": "MAE",
+    "rain_flag": "ROC_AUC"
+  }
+}
