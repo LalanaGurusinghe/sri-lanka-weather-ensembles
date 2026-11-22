@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import plotly.io as pio
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -21,88 +20,156 @@ ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
 FIG = ART / "figures"
 
-# AI-assisted: one validated palette (dataviz skill, dark mode, surface #0e1526):
-# adjacent CVD ΔE ≥ 8.4, normal-vision ΔE ≥ 19.8, every hue ≥ 3:1 against the surface.
+# AI-assisted: one palette for both themes (dataviz skill validator): adjacent CVD ΔE ≥ 8.4,
+# normal-vision ΔE ≥ 19.8, and every hue ≥ 3:1 against both the dark (#0e1526) and white surface.
 BLUE, ORANGE, AQUA, YELLOW = "#3987e5", "#d95926", "#199e70", "#c98500"
-NEUTRAL, INK, INK2, GRID = "#8b93a7", "#e6ecf5", "#a9b6ca", "rgba(148,163,184,0.13)"
+NEUTRAL = "#8b93a7"
 FAMILY_COL = {"Baseline": NEUTRAL, "Bagging": BLUE, "Boosting": ORANGE, "Stacking": AQUA, "Hybrid": YELLOW}
 SEASON_COL = {"SW": BLUE, "NE": ORANGE, "Inter": NEUTRAL}
 TASK_LABEL = {"tmax": "Next-day max temperature (°C)",
               "rain_amount": "Next-day rainfall amount (log1p mm)",
               "rain_flag": "Will it rain tomorrow? (≥ 1 mm)"}
-TASK_SHORT = {"tmax": "Max temperature", "rain_amount": "Rain amount", "rain_flag": "Rain yes / no"}
+TASK_SHORT = {"tmax": "Max temp", "rain_amount": "Rain amount", "rain_flag": "Rain yes / no"}
 MODEL_ORDER = ["Persistence", "Climatology", "Linear", "RandomForest", "BaggedTrees", "ExtraTrees",
                "HistGB", "XGBoost", "LightGBM", "CatBoost", "Stacking", "RF+ANN blend"]
 
 st.set_page_config(page_title="Sri Lanka Weather Ensembles", page_icon="🌦️", layout="wide")
 
-# ------------------------------------------------------------------ chart theme
-pio.templates["neo"] = go.layout.Template(layout=dict(
-    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(family="Inter, system-ui, sans-serif", color=INK2, size=13),
-    title=dict(font=dict(family="Space Grotesk, Inter, sans-serif", color=INK, size=16), x=0, xanchor="left",
-               y=1, yanchor="top", yref="container", pad=dict(t=14, l=4)),
-    colorway=[BLUE, ORANGE, AQUA, YELLOW],
-    xaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor=GRID, tickcolor=GRID),
-    yaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor=GRID, tickcolor=GRID),
-    legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=INK2), orientation="h", y=1.01, yanchor="bottom",
-                x=0, xanchor="left", title_text=""),
-    hoverlabel=dict(bgcolor="#0b1222", bordercolor="#38bdf8", font=dict(color=INK, family="Inter")),
-    hovermode="x unified", barcornerradius=4, margin=dict(l=10, r=10, t=86, b=10),
-))
-pio.templates.default = "plotly_dark+neo"
+
+def is_light() -> bool:
+    return st.context.theme.type == "light"
+
+
+def ink() -> str:
+    """Main text colour for the few chart marks that must stand out (the 'actual' line)."""
+    return "#0f172a" if is_light() else "#e6ecf5"
 
 
 # ------------------------------------------------------------------ style
+# AI-assisted: colours live in CSS variables; a small script (below) copies the active Streamlit
+# theme onto <html data-sl-theme>, so switching Light/Dark in Settings restyles everything at once.
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
-:root{--ink:#e6ecf5;--ink2:#a9b6ca;--muted:#8b98ad;--line:rgba(148,163,184,.18);--glass:rgba(14,21,38,.66);--accent:#38bdf8;--accent2:#a78bfa}
-.stApp{background:
-  radial-gradient(900px 500px at 8% -10%, rgba(56,189,248,.16), transparent 60%),
-  radial-gradient(800px 500px at 100% 0%, rgba(167,139,250,.12), transparent 60%),
-  radial-gradient(700px 600px at 50% 120%, rgba(25,158,112,.10), transparent 60%), #070b16;}
-.stApp, .stMarkdown p, .stMarkdown li{font-family:Inter,system-ui,sans-serif}
-h1,h2,h3,h4{font-family:'Space Grotesk',Inter,sans-serif !important;letter-spacing:-.01em}
-.block-container{padding-top:4.2rem;max-width:1320px}
-/* glass surfaces */
-[data-testid="stMetric"], [data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"]) {
-  background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-[data-testid="stMetric"]{border:1px solid var(--line);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden}
-[data-testid="stMetric"]::after{content:"";position:absolute;left:0;top:0;height:2px;width:100%;
+:root{
+  --ink:#e6ecf5;--ink2:#b4c0d3;--muted:#8b98ad;--line:rgba(148,163,184,.18);
+  --card:rgba(14,21,38,.68);--card-solid:#0e1526;--shadow:0 10px 30px rgba(0,0,0,.25);
+  --accent:#38bdf8;--accent2:#a78bfa;--accent-ink:#06101f;--chip:rgba(255,255,255,.04);
+  --hero:linear-gradient(135deg,rgba(14,25,48,.9),rgba(10,14,28,.75));
+  --hero-grid:rgba(56,189,248,.07);
+  --title-grad:linear-gradient(90deg,#e6ecf5 0%,#7dd3fc 55%,#c4b5fd 100%);
+  --page:radial-gradient(900px 500px at 8% -10%,rgba(56,189,248,.16),transparent 60%),
+         radial-gradient(800px 500px at 100% 0%,rgba(167,139,250,.12),transparent 60%),
+         radial-gradient(700px 600px at 50% 120%,rgba(25,158,112,.10),transparent 60%),#070b16;
+}
+html[data-sl-theme="light"]{
+  --ink:#0f172a;--ink2:#334155;--muted:#5b6678;--line:#d9e3ee;
+  --card:rgba(255,255,255,.86);--card-solid:#ffffff;--shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px rgba(15,23,42,.07);
+  --accent:#0a72c2;--accent2:#7c3aed;--accent-ink:#ffffff;--chip:#f1f6fb;
+  --hero:linear-gradient(135deg,#ffffff 0%,#f3f9ff 55%,#f6f3ff 100%);
+  --hero-grid:rgba(10,114,194,.07);
+  --title-grad:linear-gradient(90deg,#0f172a 0%,#0a72c2 50%,#7c3aed 100%);
+  --page:radial-gradient(900px 520px at 0% -10%,rgba(56,189,248,.20),transparent 60%),
+         radial-gradient(760px 520px at 100% 0%,rgba(167,139,250,.16),transparent 60%),
+         radial-gradient(800px 620px at 50% 115%,rgba(52,211,153,.16),transparent 60%),#f6f9fc;
+}
+.stApp{background:var(--page)}
+.block-container{padding-top:4.4rem;padding-bottom:2rem;max-width:1280px}
+.stMarkdown p,.stMarkdown li{line-height:1.65}
+h1,h2,h3,h4{letter-spacing:-.015em}
+:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px}
+
+/* cards */
+[data-testid="stMetric"],
+[data-testid="stVerticalBlockBorderWrapper"]{background:var(--card);box-shadow:var(--shadow);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+[data-testid="stVerticalBlockBorderWrapper"]{border-color:var(--line) !important;border-radius:16px !important}
+[data-testid="stMetric"]{border:1px solid var(--line);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;height:100%}
+[data-testid="stMetric"]::after{content:"";position:absolute;left:0;top:0;height:3px;width:100%;
   background:linear-gradient(90deg,var(--accent),var(--accent2),transparent)}
-[data-testid="stMetricLabel"] p{color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
-[data-testid="stMetricValue"]{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--ink)}
+[data-testid="stMetricLabel"] p{color:var(--muted);font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;font-weight:600}
+/* labels wrap instead of ending in "…" */
+[data-testid="stMetricLabel"], [data-testid="stMetricLabel"] *{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+[data-testid="stMetricValue"]{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--ink);
+  font-size:clamp(1.45rem,1.05rem + 1.4vw,2.05rem);line-height:1.15;white-space:normal;overflow-wrap:anywhere}
 [data-testid="stImage"] img{border-radius:12px}
 [data-testid="stDataFrame"]{border-radius:12px;overflow:hidden}
-:focus-visible{outline:2px solid #fff !important;outline-offset:2px}
+[data-testid="stCaptionContainer"]{color:var(--muted)}
+
 /* hero */
-.hero{position:relative;padding:28px 30px;border-radius:22px;border:1px solid var(--line);margin-bottom:18px;overflow:hidden;
-  background:linear-gradient(135deg,rgba(14,25,48,.85),rgba(10,14,28,.7))}
+.hero{position:relative;padding:clamp(18px,3.2vw,30px);border-radius:22px;border:1px solid var(--line);
+  margin-bottom:18px;overflow:hidden;background:var(--hero);box-shadow:var(--shadow)}
 .hero::before{content:"";position:absolute;inset:-1px;pointer-events:none;
-  background-image:linear-gradient(rgba(56,189,248,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.07) 1px,transparent 1px);
-  background-size:36px 36px;mask-image:linear-gradient(90deg,transparent,#000 60%)}
-.hero .eyebrow{display:inline-flex;gap:8px;align-items:center;font:600 .74rem/1 'Space Grotesk',sans-serif;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--accent);padding:6px 10px;border:1px solid rgba(56,189,248,.35);border-radius:999px;background:rgba(56,189,248,.08)}
-.hero .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(56,189,248,.6);animation:ping 2.4s infinite}
-.hero h1{font-size:clamp(1.8rem,3.2vw,2.7rem);line-height:1.1;margin:14px 0 8px;padding:0;color:var(--ink);font-weight:700}
-.hero h1 span{background:linear-gradient(90deg,#e6ecf5 0%,#7dd3fc 55%,#c4b5fd 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p{color:var(--ink2);max-width:880px;margin:0;font-size:1.02rem;line-height:1.6}
-.hero .who{margin-top:12px;color:var(--muted);font-size:.86rem}
-@keyframes ping{0%{box-shadow:0 0 0 0 rgba(56,189,248,.55)}80%,100%{box-shadow:0 0 0 9px rgba(56,189,248,0)}}
-.kicker{font:600 .74rem/1 'Space Grotesk',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:18px 0 4px}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
-.chip{font-size:.82rem;color:var(--ink2);padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03)}
+  background-image:linear-gradient(var(--hero-grid) 1px,transparent 1px),linear-gradient(90deg,var(--hero-grid) 1px,transparent 1px);
+  background-size:36px 36px;mask-image:linear-gradient(90deg,transparent,#000 65%)}
+.hero > *{position:relative}
+.hero .eyebrow{display:inline-flex;gap:8px;align-items:center;font:600 .72rem/1.2 'Space Grotesk',sans-serif;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);padding:6px 11px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
+  border-radius:999px;background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.hero .eyebrow i{width:7px;height:7px;flex:none;border-radius:50%;background:var(--accent);animation:ping 2.4s infinite}
+.hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.6rem,1.1rem + 2.3vw,2.65rem);line-height:1.12;
+  margin:14px 0 10px;padding:0;color:var(--ink);font-weight:700;overflow-wrap:break-word}
+.hero h1 span{background:var(--title-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--ink2);max-width:860px;margin:0;font-size:clamp(.95rem,.9rem + .25vw,1.05rem);line-height:1.65}
+.hero p b{color:var(--ink)}
+.hero .who{margin-top:12px;color:var(--muted);font-size:.84rem}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}80%,100%{box-shadow:0 0 0 9px transparent}}
+
+.kicker{font:600 .72rem/1.3 'Space Grotesk',sans-serif;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin:22px 0 6px}
+.chart-title{font:600 1.02rem/1.35 'Space Grotesk',sans-serif;color:var(--ink);margin:2px 0 0}
+.chart-sub{font-size:.84rem;color:var(--muted);margin:2px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0}
+.chip{font-size:.82rem;color:var(--ink2);padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--chip)}
 .chip b{color:var(--ink);font-weight:600}
+
 /* split timeline */
-.tl{display:flex;height:40px;border-radius:10px;overflow:hidden;gap:2px;margin:10px 0 6px}
-.tl div{display:flex;align-items:center;padding:0 10px;font:600 .8rem 'Space Grotesk',sans-serif;color:#06101f;white-space:nowrap}
+.tl{display:flex;height:40px;border-radius:10px;overflow:hidden;gap:2px;margin:6px 0}
+.tl div{display:flex;align-items:center;justify-content:center;font:600 .8rem 'Space Grotesk',sans-serif;color:#06101f;white-space:nowrap;min-width:0;overflow:hidden}
 .tl-legend{display:flex;justify-content:space-between;color:var(--muted);font-size:.78rem}
-.foot{margin-top:38px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:.8rem;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px}
+
+/* the theme-sync script sits in an empty element; keep it out of the layout */
+.stElementContainer:has(.sl-theme-sync){display:none}
+
+/* phones */
+@media (max-width:640px){
+  .block-container{padding-left:1rem;padding-right:1rem;padding-top:3.6rem}
+  .hero{border-radius:18px;margin-bottom:12px}
+  .hero .who{font-size:.78rem}
+  /* metric rows: two per line instead of one */
+  [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stMetric"]){flex-flow:row wrap !important;gap:.75rem !important}
+  [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stMetric"]) > [data-testid="stColumn"]{
+    flex:1 1 calc(50% - .4rem) !important;min-width:calc(50% - .4rem) !important;width:calc(50% - .4rem) !important}
+  [data-testid="stMetric"]{padding:12px 13px}
+  [data-testid="stMetricLabel"] p{font-size:.66rem;letter-spacing:.06em}
+  [data-testid="stMetricValue"]{font-size:1.3rem}
+  .kicker{margin-top:16px}
+  .foot{flex-direction:column}
+}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
+
+THEME_SYNC = """
+<span class="sl-theme-sync"></span>
+<script>
+(() => {
+  const root = document.documentElement;
+  function sync(){
+    const app = document.querySelector('.stApp'); if (!app) return;
+    // read the theme's *text* colour: our CSS repaints the background, but never the text colour
+    const m = getComputedStyle(app).color.match(/\\d+(\\.\\d+)?/g); if (!m) return;
+    const [r, g, b] = m.map(Number), lum = (0.2126*r + 0.7152*g + 0.0722*b) / 255;
+    const t = lum < 0.5 ? 'light' : 'dark';
+    if (root.dataset.slTheme !== t) root.dataset.slTheme = t;
+  }
+  sync();
+  if (!window.__slThemeSync) { window.__slThemeSync = setInterval(sync, 300); }
+})();
+</script>
+"""
+st.html(THEME_SYNC, unsafe_allow_javascript=True)
 
 
 # ------------------------------------------------------------------ data loading
@@ -158,16 +225,31 @@ def image(name, caption=None):
         st.image(str(p), caption=caption, width="stretch")
 
 
-def plot(fig, height=None):
-    if height:
-        fig.update_layout(height=height)
-    fig.update_layout(legend_title_text="")
-    st.plotly_chart(fig, width="stretch", config={"displaylogo": False})
+def plot(fig, height=320, title=None, sub=None, unified=True):
+    """Chart in a card. Titles are HTML (so they wrap on phones instead of colliding with the
+    legend); colours of text and grid come from the active Streamlit theme."""
+    fig.update_layout(
+        height=height, title_text="", margin=dict(l=4, r=8, t=8, b=4),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, system-ui, sans-serif", size=12.5),
+        legend=dict(orientation="h", y=1.0, yanchor="bottom", x=0, xanchor="left", title_text="",
+                    bgcolor="rgba(0,0,0,0)"),
+        hovermode="x unified" if unified else "closest", barcornerradius=4,
+    )
+    with st.container(border=True):
+        if title:
+            st.markdown(f'<div class="chart-title">{title}</div>' + (f'<div class="chart-sub">{sub}</div>' if sub else ""),
+                        unsafe_allow_html=True)
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False, "responsive": True})
 
 
 def task_picker(options, key):
     t = st.segmented_control("Task", options, format_func=TASK_SHORT.get, default=options[0], key=key)
     return t or options[0]
+
+
+def table(df, **kw):
+    st.dataframe(df, width="stretch", **kw)
 
 
 def footer():
@@ -199,9 +281,9 @@ def page_overview():
                    "spread around a small ring. Drag to turn the island; Pause stops the rotation.")
         with st.expander("Map values as a table"):
             cs = city_table(daily)[["city", "rain", "temp", "elev"]].sort_values("rain", ascending=False)
-            st.dataframe(cs.rename(columns={"rain": "rain (mm/yr)", "temp": "mean temp (°C)", "elev": "elevation (m)"})
-                         .style.format({"rain (mm/yr)": "{:,.0f}", "mean temp (°C)": "{:.1f}", "elevation (m)": "{:.0f}"}),
-                         hide_index=True, width="stretch")
+            table(cs.rename(columns={"rain": "rain (mm/yr)", "temp": "mean temp (°C)", "elev": "elevation (m)"})
+                  .style.format({"rain (mm/yr)": "{:,.0f}", "mean temp (°C)": "{:.1f}", "elevation (m)": "{:.0f}"}),
+                  hide_index=True)
     with right:
         kicker("Dataset")
         with st.container(border=True):
@@ -215,8 +297,8 @@ def page_overview():
             st.markdown(
                 f'<div class="tl" role="img" aria-label="Train {sp["train"]}, validation {sp["validation"]}, test {sp["test"]}">'
                 f'<div style="flex:11;background:{BLUE}">Train</div>'
-                f'<div style="flex:1;background:{YELLOW}">Val</div>'
-                f'<div style="flex:1.5;background:{AQUA}">Test</div></div>'
+                f'<div style="flex:1.4;background:{YELLOW}">Val</div>'
+                f'<div style="flex:1.8;background:{AQUA}">Test</div></div>'
                 '<div class="tl-legend"><span>2010</span><span>2021</span><span>2023</span></div>',
                 unsafe_allow_html=True)
             st.markdown(f"- **Train:** {sp['train']}\n- **Validation:** {sp['validation']}\n- **Test:** {sp['test']}")
@@ -249,23 +331,20 @@ def page_explore():
     fig.add_trace(go.Scatter(x=d.time, y=d.temperature_2m_max, name="max", line=dict(color=ORANGE, width=1.6)))
     fig.add_trace(go.Scatter(x=d.time, y=d.temperature_2m_min, name="min", line=dict(color=BLUE, width=1.6),
                              fill="tonexty", fillcolor="rgba(217,89,38,0.10)"))
-    fig.update_layout(title=f"{city}: daily temperature (°C)", yaxis_title="°C")
-    plot(fig, 340)
+    fig.update_layout(yaxis_title="°C")
+    plot(fig, 320, f"{city}: daily temperature", "Daily max and min, °C")
 
     fig = px.bar(d, x="time", y="precipitation_sum", color="season", color_discrete_map=SEASON_COL,
-                 labels={"precipitation_sum": "mm", "time": ""},
-                 title=f"{city}: daily rainfall, coloured by monsoon season")
+                 labels={"precipitation_sum": "mm", "time": ""})
     fig.update_traces(marker_line_width=0)
-    fig.update_layout(bargap=0, barcornerradius=0)
-    plot(fig, 340)
+    plot(fig, 320, f"{city}: daily rainfall", "Coloured by monsoon season (SW May–Sep, NE Dec–Feb)")
 
     allc = daily[daily.city == city].assign(month=lambda x: x.time.dt.month)
     clim = allc.groupby(["month", allc.time.dt.year]).precipitation_sum.sum().groupby("month").mean().reset_index()
     fig = px.bar(clim, x="month", y="precipitation_sum", labels={"precipitation_sum": "mm / month"},
-                 title=f"{city}: average monthly rainfall, 2010–2023", color_discrete_sequence=[BLUE])
+                 color_discrete_sequence=[BLUE])
     fig.update_xaxes(dtick=1)
-    fig.update_layout(hovermode="closest")
-    plot(fig, 310)
+    plot(fig, 290, f"{city}: average monthly rainfall", "Mean of each month's total, 2010–2023", unified=False)
     footer()
 
 
@@ -286,19 +365,20 @@ def page_arena():
         c.metric(f"Best {fam}", f"{v:.4f}", help=f"test {main}")
 
     fig = px.bar(tb.reset_index(names="model").iloc[::-1], x=main, y="model", color="family", orientation="h",
-                 color_discrete_map=FAMILY_COL, title=f"Test {main} ({'higher' if higher else 'lower'} is better)",
-                 text_auto=".4f")
+                 color_discrete_map=FAMILY_COL, text_auto=".4f")
     lo, hi = tb[main].min(), tb[main].max()
-    fig.update_xaxes(range=[lo - (hi - lo) * .2, hi + (hi - lo) * .1] if higher else [0, hi * 1.08])
-    fig.update_traces(textfont_color=INK, textposition="outside", cliponaxis=False)
+    fig.update_xaxes(range=[lo - (hi - lo) * .2, hi + (hi - lo) * .05] if higher else [0, hi * 1.02])
+    # value labels sit inside the bar end in dark ink (≥ 5:1 on every family colour, both themes)
+    fig.update_traces(textposition="inside", insidetextanchor="end", textfont=dict(color="#06101f", size=12),
+                      cliponaxis=True)
     # best model on top, whatever the colour grouping
-    fig.update_layout(yaxis_title="", hovermode="closest",
-                      yaxis_categoryorder="total ascending" if higher else "total descending")
-    plot(fig, 480)
+    fig.update_layout(yaxis_title="", yaxis_categoryorder="total ascending" if higher else "total descending")
+    plot(fig, 470, f"Test {main}", f"{'Higher' if higher else 'Lower'} is better · colour = ensemble family",
+         unified=False)
 
     kicker("Full comparison table (test set)")
-    st.dataframe(tb.style.format({c: "{:.4f}" for c in tb.columns if c not in ("family", "train_time_s")}
-                                 | {"train_time_s": "{:.1f}"}), width="stretch")
+    table(tb.style.format({c: "{:.4f}" for c in tb.columns if c not in ("family", "train_time_s")}
+                          | {"train_time_s": "{:.1f}"}))
     st.caption(f"Best ensemble: **{best.name}** ({best.family}). Training time is wall-clock seconds on a "
                "16-core laptop; rain amount is scored on the log1p(mm) scale it was trained on.")
     footer()
@@ -315,23 +395,21 @@ def page_hybrids():
     wk = load_csv("hybrid_sarima_weekly.csv", index_col=0, parse_dates=True)
     w = wk[wk.split != "train"]
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=w.index, y=w.actual, name="actual", line=dict(color=INK, width=2.4)))
+    fig.add_trace(go.Scatter(x=w.index, y=w.actual, name="actual", line=dict(color=ink(), width=2.4)))
     for name, c in [("SARIMA", ORANGE), ("RF", BLUE), ("RF+SARIMA", AQUA)]:
         fig.add_trace(go.Scatter(x=w.index, y=w[name], name=name, line=dict(color=c, width=1.8)))
-    fig.add_vrect(x0=w.index.min(), x1=pd.Timestamp("2021-12-31"), fillcolor="#38bdf8", opacity=.06, line_width=0,
-                  annotation_text="validation", annotation_position="top left", annotation_font_color=INK2)
+    fig.add_vrect(x0=w.index.min(), x1=pd.Timestamp("2021-12-31"), fillcolor="#38bdf8", opacity=.07, line_width=0,
+                  annotation_text="validation", annotation_position="top left")
     fig.update_layout(yaxis_title="°C")
-    plot(fig, 390)
-    st.dataframe(pd.DataFrame(m["hybrids"]["RF + SARIMA (Colombo weekly temp)"]).T.style.format("{:.4f}"),
-                 width="stretch")
+    plot(fig, 360, "Weekly mean temperature, Colombo", "Shaded: validation year 2021 · after it: test")
+    table(pd.DataFrame(m["hybrids"]["RF + SARIMA (Colombo weekly temp)"]).T.style.format("{:.4f}"))
 
     kicker("RF + ANN · next-day max temperature, all cities")
     lam = m.get("rf_ann_residual_lambda")
     st.markdown(f"Blend: ŷ = w·RF + (1−w)·ANN, with **w = {m['rf_ann_blend_weight']}** chosen on 2021. "
                 "Residual: the ANN learns the RF's out-of-fold errors, and the forecast is RF + λ·ANN(residual)"
                 + (f", with **λ = {lam}** chosen on 2021." if lam is not None else "."))
-    st.dataframe(pd.DataFrame(m["hybrids"]["RF + ANN (next-day Tmax)"]).T.style.format("{:.4f}"),
-                 width="stretch")
+    table(pd.DataFrame(m["hybrids"]["RF + ANN (next-day Tmax)"]).T.style.format("{:.4f}"))
     p = load_preds()
     with st.container(border=True):
         c1, c2 = st.columns([1, 2])
@@ -341,14 +419,14 @@ def page_hybrids():
         start, end = c2.slider("Days to show", lo, hi, ((p.time.max() - pd.Timedelta(days=120)).date(), hi))
     d = p[(p.city == city) & p.time.between(pd.Timestamp(start), pd.Timestamp(end))]
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=d.time, y=d["actual__tmax"], name="actual", line=dict(color=INK, width=2.2)))
+    fig.add_trace(go.Scatter(x=d.time, y=d["actual__tmax"], name="actual", line=dict(color=ink(), width=2.2)))
     # 3 validated hues + a dotted neutral for the weak ANN (orange and yellow together fail CVD checks)
     for col, name, c, dash in [("tmax__RandomForest", "RF", BLUE, "solid"), ("tmax__ANN", "ANN", NEUTRAL, "dot"),
                                ("tmax__RF+ANN blend", "RF+ANN blend", AQUA, "solid"),
                                ("tmax__RF+ANN residual", "RF+ANN residual", ORANGE, "solid")]:
         fig.add_trace(go.Scatter(x=d.time, y=d[col], name=name, line=dict(color=c, width=1.5, dash=dash)))
-    fig.update_layout(yaxis_title="°C", title=f"{city}: test period")
-    plot(fig, 390)
+    fig.update_layout(yaxis_title="°C")
+    plot(fig, 360, f"{city}: next-day max temperature", "Test period · °C")
     footer()
 
 
@@ -361,15 +439,16 @@ def page_explain():
     imp = imp[imp.task == task].sort_values("permutation", ascending=False).head(15)
     long = imp.melt(id_vars="feature", value_vars=["impurity", "permutation"], var_name="type", value_name="share")
     fig = px.bar(long.iloc[::-1], x="share", y="feature", color="type", barmode="group", orientation="h",
-                 color_discrete_map={"impurity": NEUTRAL, "permutation": BLUE},
-                 title="RandomForest: impurity vs permutation importance (top 15)")
-    fig.update_layout(yaxis_title="", hovermode="closest")
+                 color_discrete_map={"impurity": NEUTRAL, "permutation": BLUE})
+    fig.update_layout(yaxis_title="")
     c1, c2 = st.columns(2, gap="medium")
     with c1:
-        plot(fig, 540)
+        plot(fig, 520, "RandomForest feature importance", "Impurity vs permutation, top 15", unified=False)
     with c2:
         with st.container(border=True):
-            image(f"shap_{task}", "SHAP summary for the best boosting model")
+            st.markdown('<div class="chart-title">SHAP summary</div><div class="chart-sub">Best boosting model</div>',
+                        unsafe_allow_html=True)
+            image(f"shap_{task}")
 
     kicker("Short answers")
     a = st.columns(3)
@@ -389,13 +468,15 @@ def page_explain():
             st.markdown(f"**{h}.** {t}")
     c1, c2 = st.columns(2, gap="medium")
     with c1.container(border=True):
-        image("boosting_overfit_curve", "Boosting without early stopping")
+        st.markdown('<div class="chart-title">Boosting without early stopping</div>', unsafe_allow_html=True)
+        image("boosting_overfit_curve")
     with c2.container(border=True):
-        image("stacking_error_correlation", "Correlation of base-model test errors")
+        st.markdown('<div class="chart-title">Correlation of base-model test errors</div>', unsafe_allow_html=True)
+        image("stacking_error_correlation")
 
     kicker("Leakage check: random vs time split")
     demo = pd.DataFrame(load_metrics()["leakage_demo"]).set_index(["task", "split"])
-    st.dataframe(demo.style.format("{:.4f}"), width="stretch")
+    table(demo.style.format("{:.4f}"))
     st.caption("Nearby cities share Open-Meteo grid cells (Colombo = Mabole exactly), so a random split "
                "lets the model peek at a twin of each test day. Final scores always use the time split.")
     st.warning("Limits: modelled reanalysis data, not Department of Meteorology station readings; "
@@ -447,19 +528,18 @@ def page_predict():
     for f in ["Baseline", "Bagging", "Boosting", "Stacking", "Hybrid"]:
         tf = t[[fam[k] == f for k in t.index]]
         fig.add_trace(go.Scatter(x=tf.values, y=tf.index, mode="markers", name=f,
-                                 marker=dict(size=12, color=FAMILY_COL[f], line=dict(color="#0e1526", width=2)),
+                                 marker=dict(size=12, color=FAMILY_COL[f], line=dict(color="rgba(0,0,0,0)", width=0)),
                                  hovertemplate="%{y}: %{x:.2f} °C<extra></extra>"))
-    fig.add_vline(x=r["actual__tmax"], line=dict(color=INK, width=2, dash="dot"),
-                  annotation_text=f"actual {r['actual__tmax']:.1f} °C", annotation_font_color=INK)
-    fig.update_layout(title="Max temperature forecasts by model", hovermode="closest",
-                      xaxis_title="°C", yaxis=dict(autorange="reversed", categoryorder="array",
+    fig.add_vline(x=r["actual__tmax"], line=dict(color=ink(), width=2, dash="dot"),
+                  annotation_text=f"actual {r['actual__tmax']:.1f} °C", annotation_position="top")
+    fig.update_layout(xaxis_title="°C", yaxis=dict(autorange="reversed", categoryorder="array",
                                                    categoryarray=list(t.index)))
-    plot(fig, 420)
+    plot(fig, 420, "Max temperature forecasts by model", "Dotted line: what really happened",
+         unified=False)
 
-    st.dataframe(tbl.style.format({"P(rain ≥ 1 mm)": "{:.0%}", "rain (mm)": "{:.1f}", "max temp (°C)": "{:.2f}",
-                                   "temp error (°C)": "{:+.2f}"})
-                 .background_gradient(subset=["P(rain ≥ 1 mm)"], cmap="Blues", vmin=0, vmax=1),
-                 width="stretch")
+    table(tbl.style.format({"P(rain ≥ 1 mm)": "{:.0%}", "rain (mm)": "{:.1f}", "max temp (°C)": "{:.2f}",
+                            "temp error (°C)": "{:+.2f}"})
+          .background_gradient(subset=["P(rain ≥ 1 mm)"], cmap="Blues", vmin=0, vmax=1))
     st.caption("Persistence for the rain flag is a hard yes/no (today's rain), so it shows 0% or 100%.")
     footer()
 

@@ -1,12 +1,32 @@
 # AI-assisted: generated with Claude Code, reviewed and run by the author
+# Light and dark themes; the viewer picks one in the app menu (Settings), default follows the system.
 [theme]
-base = "dark"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Space Grotesk:https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 16
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+baseRadius = "0.75rem"
+buttonRadius = "0.6rem"
+showWidgetBorder = true
+
+[theme.light]
+primaryColor = "#0a72c2"
+backgroundColor = "#f6f9fc"
+secondaryBackgroundColor = "#eaf1f8"
+textColor = "#0f172a"
+borderColor = "#d5e0ec"
+linkColor = "#0a72c2"
+dataframeHeaderBackgroundColor = "#eef4fa"
+
+[theme.dark]
 primaryColor = "#38bdf8"
 backgroundColor = "#070b16"
 secondaryBackgroundColor = "#0e1526"
 textColor = "#e6ecf5"
 borderColor = "#22304a"
-baseRadius = "0.75rem"
+linkColor = "#7dd3fc"
+dataframeHeaderBackgroundColor = "#0e1526"
 
 [browser]
 gatherUsageStats = false
