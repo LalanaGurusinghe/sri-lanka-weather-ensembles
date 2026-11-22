@@ -1,0 +1,11 @@
+.venv/
+.env
+.git/
+data/
+notebooks/
+src/
+docs/
+.claude/
+artifacts/models/
+**/__pycache__/
+**/catboost_info/
