@@ -35,6 +35,7 @@ src/features.py                cleaning, lag/rolling features, targets, time spl
 src/models.py                  model builders, metrics, OOF helper
 artifacts/                     metrics.json, predictions, figures, best models
 app/app.py                     Streamlit dashboard
+app/knowledge.py               chatbot knowledge base and scenario verdicts
 app/island3d.py                animated 3D map of Sri Lanka (deck.gl, with an SVG fallback)
 app/assets/                    province outlines (geoBoundaries, CC BY 4.0)
 .streamlit/config.toml         light and dark themes, fonts
@@ -57,6 +58,14 @@ when the system asks for reduced motion.
 
 The dashboard opens in a light theme; a dark theme is one click away in the ⋮ menu. It is laid out
 for phones as well as desktops.
+
+The **Verdict** page sums up which model wins in which scenario (most accurate, best single model per
+task, fastest, simplest, one model for everything, trends, adding a neural network), computed from
+`artifacts/metrics.json`. The **Ask** page is a study chatbot about the models, the theory and the
+dashboard. Out of the box it answers from a built-in knowledge base (`app/knowledge.py`), with no
+API key. To let Claude write the answers instead, add `ANTHROPIC_API_KEY` to the app's secrets
+(Streamlit Cloud → app settings → Secrets, or `.streamlit/secrets.toml` locally, which is git-ignored).
+Each visitor session is capped at 15 Claude answers.
 
 ## AI use
 

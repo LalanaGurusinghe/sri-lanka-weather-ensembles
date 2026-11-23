@@ -1,4 +1,5 @@
 # secrets — keep first
+.streamlit/secrets.toml
 .env
 CLAUDE_CODE_PROMPT.md
 # data & env

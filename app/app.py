@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 
+import knowledge as kn
 from island3d import city_table, island_html
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -128,6 +129,7 @@ h1,h2,h3,h4{letter-spacing:-.015em}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0}
 .chip{font-size:.82rem;color:var(--ink2);padding:5px 10px;border:1px solid var(--glass-edge);border-radius:999px;background:var(--chip)}
 .chip b{color:var(--ink);font-weight:600}
+.winner{display:inline-block;font:600 1.15rem/1.3 'Space Grotesk',sans-serif;color:var(--accent);margin:-2px 0 4px}
 
 /* split timeline */
 .tl{display:flex;height:40px;border-radius:10px;overflow:hidden;gap:2px;margin:6px 0}
@@ -573,6 +575,199 @@ def page_predict():
     footer()
 
 
+# ------------------------------------------------------------------ verdict
+@st.cache_data
+def load_verdicts():
+    return kn.verdicts(load_metrics())
+
+
+def page_verdict():
+    hero("Final summary", "Which model wins,", "and when?",
+         "All scores are on the unseen 2022–23 test period. There is no single best model for everything: "
+         "it depends on the task and on what you care about (accuracy, speed, simplicity or trends).")
+    v = load_verdicts()
+
+    kicker("Winner per task")
+    cols = st.columns(3)
+    for c, p in zip(cols, v["per_task"]):
+        main = load_metrics()["main_metric"][p["task"]]
+        c.metric(f"{TASK_SHORT[p['task']]} · {main.replace('_', '-')}", kn.nice(p["winner"]),
+                 help=f"{p['winner']} scored {p['score']:.4f}")
+        c.caption(f"**{p['score']:.4f}** · {p['gain']}  \nRunner-up: {kn.nice(p['runner_up'])} "
+                  f"({p['runner_score']:.4f}) · Best single model: **{kn.nice(p['best_single'])}**")
+
+    kicker("Scenario guide: pick the model for the job")
+    grid = st.columns(2)
+    for i, sc in enumerate(v["scenarios"]):
+        with grid[i % 2].container(border=True):
+            st.markdown(f"{sc['icon']} **{sc['title']}**")
+            st.markdown(f'<div class="winner">{kn.nice(sc["winner"])}</div>', unsafe_allow_html=True)
+            st.markdown(sc["why"])
+            st.caption(f"Trade-off: {sc['cost']}")
+
+    kicker("Every model's rank on every task (1 = best)")
+    rt = pd.DataFrame(v["rank_table"]).rename(columns=TASK_SHORT)
+    rt["Average"] = rt.mean(axis=1).round(2)
+    rt = rt.sort_values("Average")
+    rt.index = [kn.nice(m) for m in rt.index]
+    z = rt.drop(columns="Average")
+    fig = go.Figure(go.Heatmap(
+        z=z.values, x=list(z.columns), y=list(z.index), text=z.values, texttemplate="%{text}",
+        colorscale=[[0, BLUE], [1, "rgba(139,147,167,.15)"]], showscale=False, xgap=3, ygap=3,
+        hovertemplate="%{y} · %{x}: rank %{z}<extra></extra>"))
+    fig.update_layout(yaxis=dict(autorange="reversed"), xaxis=dict(side="top"))
+    plot(fig, 420, "Rank of each model per task",
+         "Sorted by average rank · darker = better · baselines left out", unified=False)
+
+    best_avg = v["avg_rank"][0]
+    st.markdown(f"""
+**The takeaway**
+
+* **Stacking** is the most accurate on all three tasks, but only by a small margin, because its tree-based members make similar mistakes.
+* **Boosting beats bagging** on both temperature and rain amount: it fixes bias, while bagging only removes noise.
+* If you want **one simple, strong model**, use **{kn.nice(best_avg[0])}** (average rank {best_avg[1]:.1f}).
+* For **"will it rain?"** a plain **logistic regression** is almost as good as any ensemble, so good features mattered more than the model.
+* For **trends beyond the training range**, add a time-series model: **RF + SARIMA** can extrapolate, and trees alone can't.
+""")
+    footer()
+
+
+# ------------------------------------------------------------------ ask (chatbot)
+CLAUDE_MODEL = "claude-opus-5-5"
+ASK_LIMIT = 15          # Claude answers per visitor session, to keep the API bill bounded
+STARTERS = ["Which model won overall?", "Bagging vs boosting?",
+            "Why did stacking only win by a small margin?", "What is CatBoost?",
+            "Why not a random split?", "How do I use this dashboard?"]
+
+
+@st.cache_resource
+def kb_index():
+    return kn.Index(kn.build_kb(load_metrics()))
+
+
+@st.cache_data
+def system_prompt():
+    kb = kn.build_kb(load_metrics())
+    return (
+        "You are the study assistant inside a Streamlit dashboard about ensemble learning on the Kaggle "
+        "Sri Lanka Weather Dataset (author: Gurusinghe W.A.L.M, 224066J, University of Moratuwa). Answer "
+        "questions about this project, its dashboard pages, and ensemble-learning concepts (bagging, boosting, "
+        "stacking, hybrids, the libraries used, metrics, leakage).\n\n"
+        "Rules:\n"
+        "- Quote numbers about this project only from the reference below; never invent results.\n"
+        "- For general ML concepts you may use your own knowledge, tied back to this project where it helps.\n"
+        "- Use plain, friendly English that a student can follow. Keep answers short: a few sentences or a "
+        "short list, plus a tiny example when it helps. Use Markdown.\n"
+        "- When a dashboard page shows the answer, name the page (Overview, Explore, Model Arena, Hybrids, "
+        "Explain, Predict, Verdict).\n"
+        "- If a question is outside this project and ensemble learning, say briefly that you can only help "
+        "with this dashboard and its methods.\n\n"
+        "# Reference: this project's facts and results\n\n" + kn.grounding_text(kb)
+    )
+
+
+def api_key():
+    import os
+    try:
+        k = st.secrets.get("ANTHROPIC_API_KEY")
+    except Exception:          # no secrets file at all
+        k = None
+    return k or os.environ.get("ANTHROPIC_API_KEY")
+
+
+def offline_answer(q):
+    hits = kb_index().search(q, k=3)
+    if not hits:
+        return ("I couldn't match that to anything in this project. Try asking about a model (e.g. *What is "
+                "XGBoost?*), a result (*Which model won overall?*), the data, or a dashboard page."), []
+    card = hits[0][1]
+    ans = card["answer"] + (f"\n\n*See the **{card['page']}** page.*" if card.get("page") else "")
+    return ans, [h[1]["title"] for h in hits[1:]]
+
+
+def claude_answer(key, history):
+    """Stream Claude's reply. Yields text chunks; raises anthropic errors to the caller."""
+    import anthropic
+    client = anthropic.Anthropic(api_key=key, max_retries=2, timeout=60)
+    with client.beta.messages.stream(
+        model=CLAUDE_MODEL, max_tokens=4000,
+        betas=["server-side-fallback-2026-07-01"], fallbacks="default",
+        output_config={"effort": "low"},
+        system=[{"type": "text", "text": system_prompt(), "cache_control": {"type": "ephemeral"}}],
+        messages=history,
+    ) as stream:
+        yield from stream.text_stream
+        final = stream.get_final_message()
+    if final.stop_reason == "refusal":
+        yield "\n\n*Sorry, I can't help with that one.*"
+    elif final.stop_reason == "max_tokens":
+        yield " …"
+
+
+def _queue(q):
+    st.session_state.pending_q = q
+
+
+def page_ask():
+    hero("Ask anything", "Ask the", "study assistant",
+         "Questions about the models, the theory behind bagging, boosting and stacking, the dataset, "
+         "the results or how to use this dashboard.")
+    key = api_key()
+    chat = st.session_state.setdefault("chat", [])
+    used = st.session_state.setdefault("claude_used", 0)
+    llm = bool(key) and used < ASK_LIMIT
+    if key:
+        st.caption(f":material/auto_awesome: Answers by Claude, grounded in this project's results "
+                   f"({max(ASK_LIMIT - used, 0)} left this session, then built-in answers).")
+    else:
+        st.caption(":material/menu_book: Built-in answers from this project's knowledge base (no AI service "
+                   "connected). Ask in your own words; it finds the closest topic.")
+
+    for msg in chat:
+        with st.chat_message(msg["role"], avatar=":material/person:" if msg["role"] == "user" else ":material/smart_toy:"):
+            st.markdown(msg["content"])
+
+    last_related = next((m.get("related") for m in reversed(chat) if m["role"] == "assistant"), None)
+    options = (last_related or []) if chat else STARTERS
+    if options:
+        st.pills("Suggested questions" if not chat else "Related", options, key=f"sugg_{len(chat)}",
+                 on_change=lambda k=f"sugg_{len(chat)}": _queue(st.session_state[k]),
+                 label_visibility="collapsed" if chat else "visible")
+
+    typed = st.chat_input("Ask about a model, a result or a page…")
+    q = typed or st.session_state.pop("pending_q", None)
+    if not q:
+        if chat and st.button("Clear chat", icon=":material/delete_sweep:", type="tertiary"):
+            st.session_state.chat = []
+            st.rerun()
+        footer()
+        return
+
+    q = q.strip()[:500]
+    chat.append({"role": "user", "content": q})
+    with st.chat_message("user", avatar=":material/person:"):
+        st.markdown(q)
+    with st.chat_message("assistant", avatar=":material/smart_toy:"):
+        related, text = [], None
+        if llm:
+            import anthropic
+            history = [{"role": m["role"], "content": m["content"]} for m in chat[-10:]]
+            try:
+                text = st.write_stream(claude_answer(key, history))
+                st.session_state.claude_used = used + 1
+            except anthropic.AuthenticationError:
+                st.caption("The AI key was rejected, so here's the built-in answer instead.")
+            except anthropic.RateLimitError:
+                st.caption("The AI service is busy right now, so here's the built-in answer instead.")
+            except (anthropic.APIStatusError, anthropic.APIConnectionError):
+                st.caption("The AI service couldn't be reached, so here's the built-in answer instead.")
+        if not text:
+            text, related = offline_answer(q)
+            st.markdown(text)
+    chat.append({"role": "assistant", "content": text, "related": related})
+    st.rerun()
+
+
 # ------------------------------------------------------------------ navigation
 PAGES = [
     st.Page(page_overview, title="Overview", icon=":material/public:", url_path="overview", default=True),
@@ -581,5 +776,7 @@ PAGES = [
     st.Page(page_hybrids, title="Hybrids", icon=":material/merge_type:", url_path="hybrids"),
     st.Page(page_explain, title="Explain", icon=":material/psychology:", url_path="explain"),
     st.Page(page_predict, title="Predict", icon=":material/online_prediction:", url_path="predict"),
+    st.Page(page_verdict, title="Verdict", icon=":material/emoji_events:", url_path="verdict"),
+    st.Page(page_ask, title="Ask", icon=":material/forum:", url_path="ask"),
 ]
 st.navigation(PAGES, position="top").run()
